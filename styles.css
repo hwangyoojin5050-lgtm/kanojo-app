@@ -280,10 +280,47 @@ button {
   font-weight: 700;
 }
 
-.sim-choice-box label {
-  display: block;
-  padding: 7px 0;
-  border-top: 1px solid #ea9ec8;
+.sim-choice-box.hidden {
+  display: none;
+}
+
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.choice-btn {
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.9);
+  color: #5a1f49;
+  border: 1px solid #ea9ec8;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.scene-title {
+  margin: 0 0 6px;
+  color: #7a3b63;
+  font-family: "Cormorant Garamond", "Noto Serif KR", serif;
+  font-size: 0.95rem;
+}
+
+.story-next-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: linear-gradient(120deg, #e8a6b3, #f7c9d3);
+  color: #4a203f;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.story-next-btn.hidden {
+  display: none;
 }
 
 .sim-main-image {

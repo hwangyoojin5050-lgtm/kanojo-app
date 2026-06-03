@@ -1,11 +1,11 @@
-const STORAGE_KEY = "your_next_seat_v1";
+const STORAGE_KEY = "your_next_seat_v2";
 const MAX_AFFECTION = 1000;
+const HAPPY_ENDING_MIN_AFFECTION = 500;
 
 const state = loadState();
 
 const ui = {
   timerDisplay: document.getElementById("timerDisplay"),
-  subjectSelect: document.getElementById("subjectSelect"),
   startBtn: document.getElementById("startBtn"),
   stopBtn: document.getElementById("stopBtn"),
   resetBtn: document.getElementById("resetBtn"),
@@ -24,8 +24,15 @@ const ui = {
   sessionEditForm: document.getElementById("sessionEditForm"),
   editSessionId: document.getElementById("editSessionId"),
   editDate: document.getElementById("editDate"),
-  editSubject: document.getElementById("editSubject"),
   editMinutes: document.getElementById("editMinutes"),
+  characterName: document.getElementById("characterName"),
+  sceneTitle: document.getElementById("sceneTitle"),
+  choiceTitle: document.getElementById("choiceTitle"),
+  choiceList: document.getElementById("choiceList"),
+  storyNextBtn: document.getElementById("storyNextBtn"),
+  storyNextSceneBtn: document.getElementById("storyNextSceneBtn"),
+  storyLogBtn: document.getElementById("storyLogBtn"),
+  simChoiceBox: document.querySelector(".sim-choice-box"),
   cancelSessionEditBtn: document.getElementById("cancelSessionEditBtn"),
   weeklyTotalText: document.getElementById("weeklyTotalText"),
   aggregationStartText: document.getElementById("aggregationStartText"),
@@ -46,6 +53,18 @@ let startTimestamp = state.timerStartTimestamp;
 let elapsedMs = state.timerElapsedMs;
 let weeklyChart = null;
 
+function defaultStoryState() {
+  return {
+    currentSceneId: "prologue",
+    lineIndex: 0,
+    phase: "lines",
+    completedScenes: [],
+    choices: {},
+    ending: null,
+    reactionIndex: 0,
+  };
+}
+
 function loadState() {
   const fallback = {
     sessions: [],
@@ -54,6 +73,8 @@ function loadState() {
     unlockedEvents: [],
     timerStartTimestamp: null,
     timerElapsedMs: 0,
+    playerName: "나",
+    story: defaultStoryState(),
   };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -63,10 +84,262 @@ function loadState() {
       ...session,
       id: session.id || crypto.randomUUID(),
     }));
+    parsed.story = { ...defaultStoryState(), ...(parsed.story || {}) };
     return parsed;
   } catch {
     return fallback;
   }
+}
+
+function getTotalStudyMinutes() {
+  return Math.floor(
+    state.sessions.reduce((acc, cur) => acc + (cur.durationMs || 0), 0) / 60000
+  );
+}
+
+function formatStoryText(text) {
+  return text.replaceAll("○○", state.playerName || "나");
+}
+
+function getScene(sceneId) {
+  return STORY_SCENES[sceneId];
+}
+
+function isSceneUnlocked(sceneId) {
+  const scene = getScene(sceneId);
+  if (!scene) return false;
+  if (scene.isEnding) return false;
+  if (getTotalStudyMinutes() < (scene.unlockMinMinutes || 0)) return false;
+  if (scene.unlockAffection && state.affection < scene.unlockAffection) return false;
+  if (scene.requiresCompleted) {
+    return scene.requiresCompleted.every((id) => state.story.completedScenes.includes(id));
+  }
+  return true;
+}
+
+function getPlayableSceneId() {
+  if (state.story.ending) {
+    return state.story.ending === "happy" ? "ending_happy" : "ending_yandere";
+  }
+  for (const sceneId of STORY_ORDER) {
+    if (sceneId.startsWith("ending_")) continue;
+    if (state.story.completedScenes.includes(sceneId)) continue;
+    if (isSceneUnlocked(sceneId)) return sceneId;
+  }
+  return null;
+}
+
+function getCurrentScene() {
+  return getScene(state.story.currentSceneId);
+}
+
+function startScene(sceneId) {
+  state.story.currentSceneId = sceneId;
+  state.story.lineIndex = 0;
+  state.story.phase = "lines";
+  state.story.reactionIndex = 0;
+  saveState();
+  renderStory();
+}
+
+function completeScene(sceneId) {
+  if (!state.story.completedScenes.includes(sceneId)) {
+    state.story.completedScenes.push(sceneId);
+  }
+}
+
+function resolveEnding(endingKey) {
+  const affectionOk = state.affection >= HAPPY_ENDING_MIN_AFFECTION;
+  let ending = "yandere";
+  if (endingKey === "happy" && affectionOk) {
+    ending = "happy";
+  }
+  state.story.ending = ending;
+  state.story.phase = "lines";
+  state.story.lineIndex = 0;
+  state.story.currentSceneId = ending === "happy" ? "ending_happy" : "ending_yandere";
+  completeScene("event5");
+  saveState();
+  renderStory();
+}
+
+function getStageData(affection) {
+  if (state.story.ending === "happy") {
+    return { stage: "해피 엔딩", dialogue: "\"내 옆에서 절대 도망치지 마.\"" };
+  }
+  if (state.story.ending === "yandere") {
+    return { stage: "얀데레 엔딩", dialogue: "\"영원히 내 옆자리에서.\"" };
+  }
+  if (affection >= 800) {
+    return { stage: "연인 직전", dialogue: "\"오늘도 왔네... 이제 네가 없으면 심심해.\"" };
+  }
+  if (affection >= 500) {
+    return { stage: "썸", dialogue: "\"너 진짜 꾸준하네. 같이 더 멀리 가보자.\"" };
+  }
+  if (affection >= 250) {
+    return { stage: "친밀", dialogue: "\"네가 공부하는 모습, 보기 좋아.\"" };
+  }
+  if (affection >= 100) {
+    return { stage: "어색한 친구", dialogue: "\"오... 또 공부했네? 조금 인상 달라졌어.\"" };
+  }
+  return { stage: "낯섦", dialogue: "\"안녕... 공부 열심히 해볼래?\"" };
+}
+
+function renderStory() {
+  const scene = getCurrentScene();
+  if (!scene) return;
+
+  ui.sceneTitle.textContent = scene.title;
+  ui.choiceList.innerHTML = "";
+  ui.simChoiceBox?.classList.toggle("hidden", true);
+
+  if (state.story.phase === "choice" && scene.choices) {
+    ui.simChoiceBox.classList.remove("hidden");
+    ui.choiceTitle.textContent = "Choose 1";
+    scene.choices.forEach((choice) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "choice-btn";
+      btn.textContent = `${choice.id}. ${formatStoryText(choice.text)}`;
+      btn.addEventListener("click", () => pickChoice(choice.id));
+      ui.choiceList.appendChild(btn);
+    });
+    ui.dialogueText.textContent = "선택지를 골라주세요.";
+    ui.storyNextBtn.classList.add("hidden");
+    return;
+  }
+
+  const lines = getActiveLines(scene);
+  const line = lines[state.story.lineIndex];
+  if (!line) {
+    if (scene.choices && state.story.phase === "lines") {
+      state.story.phase = "choice";
+      saveState();
+      renderStory();
+      return;
+    }
+    if (scene.postLines && state.story.phase === "lines") {
+      state.story.phase = "post";
+      state.story.lineIndex = 0;
+      saveState();
+      renderStory();
+      return;
+    }
+    finishCurrentScene();
+    return;
+  }
+
+  ui.storyNextBtn.classList.remove("hidden");
+  ui.dialogueText.textContent = formatLine(line);
+}
+
+function getActiveLines(scene) {
+  if (state.story.phase === "reaction") {
+    const choiceId = state.story.choices[scene.id];
+    const choice = scene.choices?.find((c) => c.id === choiceId);
+    return choice?.reaction || [];
+  }
+  if (state.story.phase === "post" && scene.postLines) {
+    return scene.postLines;
+  }
+  return scene.lines || [];
+}
+
+function formatLine(line) {
+  const speakerMap = {
+    player: "나",
+    anna: "안나",
+    system: "시스템",
+    narration: "",
+  };
+  const prefix = speakerMap[line.speaker] ? `${speakerMap[line.speaker]}: ` : "";
+  return `${prefix}${formatStoryText(line.text)}`;
+}
+
+function advanceStoryLine() {
+  const scene = getCurrentScene();
+  if (!scene) return;
+  if (state.story.phase === "choice") return;
+
+  state.story.lineIndex += 1;
+  const lines = getActiveLines(scene);
+  if (state.story.lineIndex >= lines.length) {
+    if (state.story.phase === "reaction") {
+      if (scene.postLines) {
+        state.story.phase = "post";
+        state.story.lineIndex = 0;
+      } else {
+        finishCurrentScene();
+        return;
+      }
+    } else if (state.story.phase === "post") {
+      finishCurrentScene();
+      return;
+    } else if (scene.choices && state.story.choices[scene.id] === undefined) {
+      state.story.phase = "choice";
+      state.story.lineIndex = 0;
+    } else {
+      finishCurrentScene();
+      return;
+    }
+  }
+  saveState();
+  renderStory();
+}
+
+function pickChoice(choiceId) {
+  const scene = getCurrentScene();
+  if (!scene?.choices) return;
+  const choice = scene.choices.find((c) => c.id === choiceId);
+  if (!choice) return;
+
+  state.story.choices[scene.id] = choiceId;
+  recalculateAffectionAndUnlocks();
+
+  if (scene.id === "event5" && choice.endingKey) {
+    completeScene("event5");
+    resolveEnding(choice.endingKey);
+    return;
+  }
+
+  state.story.phase = "reaction";
+  state.story.lineIndex = 0;
+  saveState();
+  renderStory();
+}
+
+function finishCurrentScene() {
+  const sceneId = state.story.currentSceneId;
+  completeScene(sceneId);
+
+  if (state.story.ending) {
+    ui.dialogueText.textContent = "엔딩에 도달했습니다. 공부를 계속하며 기록을 쌓아보세요.";
+    ui.storyNextBtn.classList.add("hidden");
+    saveState();
+    renderUnlockList();
+    renderStats();
+    return;
+  }
+
+  const next = getPlayableSceneId();
+  if (next && next !== sceneId) {
+    startScene(next);
+    return;
+  }
+
+  state.story.phase = "done";
+  ui.dialogueText.textContent =
+    "다음 스토리를 해금하려면 공부 시간을 더 쌓아주세요. (사건1: 5시간, 이후 호감도 상승)";
+  ui.storyNextBtn.classList.add("hidden");
+  saveState();
+  renderUnlockList();
+  renderStats();
+}
+
+function tryStartNextScene() {
+  const next = getPlayableSceneId();
+  if (!next || state.story.ending) return;
+  startScene(next);
 }
 
 function saveState() {
@@ -125,37 +398,6 @@ function getSubjectClass(subject) {
   return "subject-etc";
 }
 
-function getStageData(affection) {
-  if (affection >= 800) {
-    return {
-      stage: "연인 직전",
-      dialogue: "\"오늘도 왔네... 이제 네가 없으면 심심해.\"",
-    };
-  }
-  if (affection >= 500) {
-    return {
-      stage: "썸",
-      dialogue: "\"너 진짜 꾸준하네. 같이 더 멀리 가보자.\"",
-    };
-  }
-  if (affection >= 250) {
-    return {
-      stage: "친밀",
-      dialogue: "\"네가 공부하는 모습, 보기 좋아.\"",
-    };
-  }
-  if (affection >= 100) {
-    return {
-      stage: "어색한 친구",
-      dialogue: "\"오... 또 공부했네? 조금 인상 달라졌어.\"",
-    };
-  }
-  return {
-    stage: "낯섦",
-    dialogue: "\"안녕... 공부 열심히 해볼래?\"",
-  };
-}
-
 function calculateStreak() {
   const dayMap = new Map();
   for (const session of state.sessions) {
@@ -177,22 +419,18 @@ function calculateStreak() {
   return streak;
 }
 
-function unlockEvents() {
-  const rules = [
-    { key: "e1", min: 100, title: "첫 칭찬 이벤트 해금" },
-    { key: "e2", min: 300, title: "방과 후 데이트 스토리 해금" },
-    { key: "e3", min: 600, title: "특별 일러스트 해금" },
-    { key: "e4", min: 900, title: "엔딩 분기 조건 오픈" },
-  ];
-  for (const rule of rules) {
-    if (state.affection >= rule.min && !state.unlockedEvents.includes(rule.key)) {
-      state.unlockedEvents.push(rule.key);
-    }
-  }
-}
-
 function getEarnedAffection(durationMs) {
   return Math.max(5, Math.floor(durationMs / (5 * 60 * 1000)) * 10);
+}
+
+function getChoiceBonusTotal() {
+  let bonus = 0;
+  for (const [sceneId, choiceId] of Object.entries(state.story.choices)) {
+    const scene = getScene(sceneId);
+    const choice = scene?.choices?.find((c) => c.id === choiceId);
+    if (choice?.affectionBonus) bonus += choice.affectionBonus;
+  }
+  return bonus;
 }
 
 function recalculateAffectionAndUnlocks() {
@@ -200,30 +438,29 @@ function recalculateAffectionAndUnlocks() {
   for (const session of state.sessions) {
     totalAffection += getEarnedAffection(session.durationMs || 0);
   }
+  totalAffection += getChoiceBonusTotal();
   state.affection = Math.min(MAX_AFFECTION, totalAffection);
-  state.unlockedEvents = [];
-  unlockEvents();
 }
 
 function renderUnlockList() {
-  const labelMap = {
-    e1: "첫 칭찬 이벤트 해금",
-    e2: "방과 후 데이트 스토리 해금",
-    e3: "특별 일러스트 해금",
-    e4: "엔딩 분기 조건 오픈",
-  };
   ui.unlockList.innerHTML = "";
-  if (state.unlockedEvents.length === 0) {
+  const items = STORY_ORDER.filter((id) => !id.startsWith("ending_"));
+  for (const sceneId of items) {
+    const scene = getScene(sceneId);
     const li = document.createElement("li");
-    li.textContent = "아직 해금된 이벤트가 없습니다.";
+    const done = state.story.completedScenes.includes(sceneId);
+    const unlocked = isSceneUnlocked(sceneId);
+    if (done) li.textContent = `✓ ${scene.title}`;
+    else if (unlocked) li.textContent = `▶ ${scene.title} (진행 가능)`;
+    else li.textContent = `🔒 ${scene.title}`;
     ui.unlockList.appendChild(li);
-    return;
   }
-  state.unlockedEvents.forEach((key) => {
+  if (state.story.ending) {
     const li = document.createElement("li");
-    li.textContent = `- ${labelMap[key]}`;
+    const endScene = getScene(state.story.ending === "happy" ? "ending_happy" : "ending_yandere");
+    li.textContent = `★ ${endScene.title} 달성`;
     ui.unlockList.appendChild(li);
-  });
+  }
 }
 
 function renderSessions() {
@@ -240,7 +477,7 @@ function renderSessions() {
     li.className = "session-item";
 
     const text = document.createElement("span");
-    text.textContent = `${s.dateKey} | ${s.subject} | ${Math.floor(s.durationMs / 60000)}분`;
+    text.textContent = `${s.dateKey} | ${Math.floor(s.durationMs / 60000)}분`;
     li.appendChild(text);
 
     const editBtn = document.createElement("button");
@@ -445,7 +682,6 @@ function renderStats() {
 
   ui.stageText.textContent = `관계 단계: ${stage.stage}`;
   ui.affectionText.textContent = `호감도: ${state.affection} / ${MAX_AFFECTION}`;
-  ui.dialogueText.textContent = stage.dialogue;
   ui.affectionBar.style.width = `${Math.min(100, (state.affection / MAX_AFFECTION) * 100)}%`;
 }
 
@@ -469,15 +705,17 @@ function stopTimerAndSave() {
   const durationMs = elapsedMs;
   if (durationMs >= 60 * 1000) {
     const dateKey = getTodayKey();
-    const subject = ui.subjectSelect.value;
     state.sessions.push({
       id: crypto.randomUUID(),
-      subject,
       dateKey,
       durationMs,
       createdAt: new Date().toISOString(),
     });
     recalculateAffectionAndUnlocks();
+    const nextScene = getPlayableSceneId();
+    if (nextScene && state.story.phase === "done") {
+      tryStartNextScene();
+    }
   }
   startTimestamp = null;
   elapsedMs = 0;
@@ -494,7 +732,6 @@ function openSessionEditor(sessionId) {
   if (!session) return;
   ui.editSessionId.value = session.id;
   ui.editDate.value = session.dateKey;
-  ui.editSubject.value = session.subject || "기타";
   ui.editMinutes.value = String(Math.max(1, Math.floor((session.durationMs || 0) / 60000)));
   ui.sessionEditForm.classList.remove("hidden");
 }
@@ -509,14 +746,12 @@ function saveSessionEdit(event) {
   const sessionId = ui.editSessionId.value;
   const nextMinutes = Number(ui.editMinutes.value);
   const nextDate = ui.editDate.value;
-  const nextSubject = ui.editSubject.value;
   if (!sessionId || !nextDate || !Number.isFinite(nextMinutes) || nextMinutes < 1) return;
 
   const target = state.sessions.find((s) => s.id === sessionId);
   if (!target) return;
 
   target.dateKey = nextDate;
-  target.subject = nextSubject;
   target.durationMs = Math.floor(nextMinutes) * 60000;
 
   recalculateAffectionAndUnlocks();
@@ -558,10 +793,20 @@ function restoreRunningTimer() {
 function renderAll() {
   renderTimer();
   renderStats();
+  renderStory();
   renderUnlockList();
   renderSessions();
   renderWeeklyChart();
   renderHeatmap();
+}
+
+function bindStoryActions() {
+  ui.storyNextBtn.addEventListener("click", advanceStoryLine);
+  ui.storyNextSceneBtn.addEventListener("click", tryStartNextScene);
+  ui.storyLogBtn.addEventListener("click", () => {
+    activateTab("planner-sim");
+    renderUnlockList();
+  });
 }
 
 function activateTab(tabName) {
@@ -598,4 +843,5 @@ ui.saveGoalBtn.addEventListener("click", () => {
 restoreRunningTimer();
 bindTabs();
 bindSessionEditActions();
+bindStoryActions();
 renderAll();

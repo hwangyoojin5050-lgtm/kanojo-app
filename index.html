@@ -12,6 +12,7 @@
     />
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+    <script src="./story.js" defer></script>
     <script src="./app.js" defer></script>
   </head>
   <body>
@@ -85,17 +86,14 @@
                 </div>
               </div>
               <div class="sim-top-actions">
-                <button type="button">SAVE</button>
-                <button type="button">SETTINGS</button>
-                <button type="button">AUTO OFF</button>
+                <button type="button" id="storyLogBtn">스토리</button>
+                <button type="button" id="storyNextSceneBtn">다음</button>
               </div>
             </div>
 
             <div class="sim-choice-box">
-              <p>Choose 1</p>
-              <label><input type="checkbox" checked /> 같이 공부하러 갈래?</label>
-              <label><input type="checkbox" /> 오늘은 쉬고 싶어.</label>
-              <label><input type="checkbox" /> 좀 더 다가가고 싶어.</label>
+              <p id="choiceTitle">Choose 1</p>
+              <div id="choiceList" class="choice-list"></div>
             </div>
 
             <img
@@ -106,12 +104,14 @@
 
             <div class="sim-dialogue-box">
               <div class="sim-name-row">
-                <strong>하나</strong>
+                <strong id="characterName">안나</strong>
                 <div class="progress-wrap sim-love-progress">
                   <div id="affectionBar" class="progress-bar love"></div>
                 </div>
               </div>
+              <p id="sceneTitle" class="scene-title"></p>
               <p id="dialogueText" class="dialogue">"안녕... 공부 열심히 해볼래?"</p>
+              <button type="button" id="storyNextBtn" class="story-next-btn">NEXT ▶</button>
               <ul id="unlockList" class="unlock-list"></ul>
             </div>
           </section>
