@@ -35,8 +35,6 @@ const ui = {
   storyNextSceneBtn: document.getElementById("storyNextSceneBtn"),
   storyLogBtn: document.getElementById("storyLogBtn"),
   simChoiceBox: document.querySelector(".sim-choice-box"),
-  playerNameInput: document.getElementById("playerNameInput"),
-  savePlayerNameBtn: document.getElementById("savePlayerNameBtn"),
   playerNameSetup: document.getElementById("playerNameSetup"),
   prologueNameInput: document.getElementById("prologueNameInput"),
   confirmPrologueNameBtn: document.getElementById("confirmPrologueNameBtn"),
@@ -147,8 +145,6 @@ function setPlayerName(name, { confirm = false } = {}) {
 }
 
 function syncPlayerNameInputs() {
-  const name = getPlayerName();
-  if (ui.playerNameInput) ui.playerNameInput.value = name;
   if (ui.prologueNameInput && needsPrologueNameSetup()) {
     ui.prologueNameInput.value =
       state.playerName !== DEFAULT_PLAYER_NAME ? state.playerName : "";
@@ -890,14 +886,6 @@ function bindStoryActions() {
   });
   ui.prologueNameInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") ui.confirmPrologueNameBtn?.click();
-  });
-  ui.savePlayerNameBtn?.addEventListener("click", () => {
-    if (!setPlayerName(ui.playerNameInput.value, { confirm: true })) {
-      ui.dialogueText.textContent = "이름을 한 글자 이상 입력해 주세요.";
-    }
-  });
-  ui.playerNameInput?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") ui.savePlayerNameBtn?.click();
   });
 }
 
