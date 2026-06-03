@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>너의 옆자리</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <h1 class="app-title">너의 옆자리</h1>
+        <p class="subtitle">공부할수록 호감도와 스토리가 해금됩니다.</p>
+      </header>
+
+      <main>
+        <nav class="tabs">
+          <button class="tab-btn active" data-tab="timer">
+            <span class="tab-icon" aria-hidden="true">⏱</span>
+            <span>타이머</span>
+          </button>
+          <button class="tab-btn" data-tab="planner-sim">
+            <span class="tab-icon" aria-hidden="true">💗</span>
+            <span>연애</span>
+          </button>
+          <button class="tab-btn" data-tab="stats">
+            <span class="tab-icon" aria-hidden="true">📊</span>
+            <span>통계</span>
+          </button>
+        </nav>
+
+        <div id="tab-timer" class="tab-panel active">
+          <div class="grid">
+            <section class="card">
+              <h2>측정 - 공부 타이머</h2>
+              <div class="timer-panel">
+                <div id="timerDisplay" class="timer">00:00:00</div>
+                <div class="buttons">
+                  <button id="startBtn" class="primary">시작</button>
+                  <button id="stopBtn">정지/저장</button>
+                  <button id="resetBtn" class="danger">리셋</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>플래너 - 목표</h2>
+              <div class="planner">
+                <div class="row">
+                  <label for="goalInput">일일 목표(분)</label>
+                  <input id="goalInput" type="number" min="10" step="10" />
+                  <button id="saveGoalBtn">목표 저장</button>
+                </div>
+                <p id="todayStudyText">오늘 공부: 0분</p>
+                <p id="goalProgressText">목표 달성률: 0%</p>
+                <div class="progress-wrap">
+                  <div id="goalProgressBar" class="progress-bar"></div>
+                </div>
+                <p id="streakText">연속 학습일: 0일</p>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div id="tab-planner-sim" class="tab-panel">
+          <section class="sim-scene">
+            <div class="sim-topbar">
+              <div class="sim-profile">
+                <img
+                  class="sim-profile-image"
+                  src="file:///C:/Users/SEC/.cursor/projects/c-Users-SEC-Desktop-kanojo-app/assets/c__Users_SEC_AppData_Roaming_Cursor_User_workspaceStorage_8a93be16aefe660ad16921da96de19d7_images_42189-bb153183-0b21-4a7c-a291-6fcfb523709c.png"
+                  alt="캐릭터 프로필"
+                />
+                <div>
+                  <p id="stageText">관계 단계: 낯섦</p>
+                  <p id="affectionText">호감도: 0 / 1000</p>
+                </div>
+              </div>
+              <div class="sim-top-actions">
+                <button type="button">SAVE</button>
+                <button type="button">SETTINGS</button>
+                <button type="button">AUTO OFF</button>
+              </div>
+            </div>
+
+            <div class="sim-choice-box">
+              <p>Choose 1</p>
+              <label><input type="checkbox" checked /> 같이 공부하러 갈래?</label>
+              <label><input type="checkbox" /> 오늘은 쉬고 싶어.</label>
+              <label><input type="checkbox" /> 좀 더 다가가고 싶어.</label>
+            </div>
+
+            <img
+              class="sim-main-image"
+              src="file:///C:/Users/SEC/.cursor/projects/c-Users-SEC-Desktop-kanojo-app/assets/c__Users_SEC_AppData_Roaming_Cursor_User_workspaceStorage_8a93be16aefe660ad16921da96de19d7_images_42189-bb153183-0b21-4a7c-a291-6fcfb523709c.png"
+              alt="연애 시뮬레이션 메인 캐릭터"
+            />
+
+            <div class="sim-dialogue-box">
+              <div class="sim-name-row">
+                <strong>하나</strong>
+                <div class="progress-wrap sim-love-progress">
+                  <div id="affectionBar" class="progress-bar love"></div>
+                </div>
+              </div>
+              <p id="dialogueText" class="dialogue">"안녕... 공부 열심히 해볼래?"</p>
+              <ul id="unlockList" class="unlock-list"></ul>
+            </div>
+          </section>
+        </div>
+
+        <div id="tab-stats" class="tab-panel">
+          <div class="grid">
+            <section class="card weekly-card">
+              <div class="weekly-head">
+                <h2>내 공부 시간</h2>
+                <div class="weekly-summary">
+                  <p id="weeklyTotalText">누적 작업 시간 0시간 0분</p>
+                  <p id="aggregationStartText">집계 시작일 : -</p>
+                </div>
+              </div>
+              <canvas id="weeklyStudyChart" class="weekly-chart"></canvas>
+            </section>
+
+            <section class="card chart-card">
+              <h2>공부 시간 히트맵</h2>
+              <p class="heatmap-help">예시처럼 시간표 형태로, 요일별/시간대별 공부 패턴을 보여줍니다.</p>
+              <div class="heatmap-layout">
+                <div id="heatmapHourLabels" class="hour-labels"></div>
+                <div class="heatmap-main">
+                  <div id="heatmapDayLabels" class="day-labels"></div>
+                  <div id="studyHeatmap" class="heatmap-grid"></div>
+                </div>
+              </div>
+              <div class="heatmap-legend">
+                <span>과목</span>
+                <div class="legend-item"><span class="legend-cell subject-english"></span>영어</div>
+                <div class="legend-item"><span class="legend-cell subject-korean"></span>국어/코딩</div>
+                <div class="legend-item"><span class="legend-cell subject-science"></span>수학</div>
+                <div class="legend-item"><span class="legend-cell subject-etc"></span>기타</div>
+              </div>
+            </section>
+
+            <section class="card log-card">
+              <h2>최근 기록</h2>
+              <form id="sessionEditForm" class="session-edit-form hidden">
+                <input id="editSessionId" type="hidden" />
+                <div class="row">
+                  <label for="editDate">날짜</label>
+                  <input id="editDate" type="date" />
+                </div>
+                <div class="row">
+                  <label for="editMinutes">공부 시간(분)</label>
+                  <input id="editMinutes" type="number" min="1" />
+                </div>
+                <div class="buttons">
+                  <button id="saveSessionEditBtn" type="submit" class="primary">수정 저장</button>
+                  <button id="cancelSessionEditBtn" type="button">취소</button>
+                </div>
+              </form>
+              <ul id="sessionList"></ul>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
