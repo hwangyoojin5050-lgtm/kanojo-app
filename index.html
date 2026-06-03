@@ -130,12 +130,36 @@
         <rect x="4" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
         <rect x="14" y="14" width="6" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" />
       </symbol>
+      <symbol id="icon-volume" viewBox="0 0 24 24">
+        <path d="M11 6L6 10H3v4h3l5 4V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+        <path d="M16 9a4 4 0 0 1 0 6M18 7a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="icon-volume-off" viewBox="0 0 24 24">
+        <path d="M11 6L6 10H3v4h3l5 4V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+        <path d="M18 10l-8 8M10 10l8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </symbol>
     </svg>
 
     <div class="app">
+      <audio id="bgmAudio" src="./assets/cozy_room.mp3" loop preload="auto"></audio>
+
       <header class="app-header">
-        <h1 class="app-title">너의 옆자리</h1>
-        <p class="subtitle">공부할수록 호감도와 스토리가 해금됩니다.</p>
+        <div class="app-header-text">
+          <h1 class="app-title">너의 옆자리</h1>
+          <p class="subtitle">공부할수록 호감도와 스토리가 해금됩니다.</p>
+        </div>
+        <button
+          type="button"
+          id="bgmToggle"
+          class="btn-pill btn-pill--compact bgm-toggle"
+          aria-pressed="true"
+          aria-label="배경음악 끄기"
+        >
+          <svg class="ui-icon bgm-toggle-icon" aria-hidden="true">
+            <use href="#icon-volume"></use>
+          </svg>
+          <span class="bgm-toggle-label">BGM</span>
+        </button>
       </header>
 
       <main>

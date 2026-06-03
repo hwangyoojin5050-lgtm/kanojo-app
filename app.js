@@ -5,8 +5,10 @@ const HAPPY_ENDING_MIN_AFFECTION = 500;
 const HEATMAP_LEVEL_MINUTES = [0, 1, 10, 20, 40];
 const MAX_PLAYER_NAME_LEN = 12;
 const DEFAULT_PLAYER_NAME = "나";
+const BGM_VOLUME = 0.4;
 
 const state = loadState();
+let bgmUnlockAttempted = false;
 
 const ui = {
   timerDisplay: document.getElementById("timerDisplay"),
@@ -57,6 +59,8 @@ const ui = {
     plannerSim: document.getElementById("tab-planner-sim"),
     stats: document.getElementById("tab-stats"),
   },
+  bgmAudio: document.getElementById("bgmAudio"),
+  bgmToggle: document.getElementById("bgmToggle"),
 };
 
 let timerHandle = null;
@@ -86,6 +90,7 @@ function loadState() {
     timerElapsedMs: 0,
     playerName: DEFAULT_PLAYER_NAME,
     nameConfirmed: false,
+    bgmEnabled: true,
     story: defaultStoryState(),
   };
   try {
@@ -991,8 +996,76 @@ ui.saveGoalBtn.addEventListener("click", () => {
   renderStats();
 });
 
+function updateBgmToggleUI() {
+  if (!ui.bgmToggle) return;
+  const on = state.bgmEnabled;
+  ui.bgmToggle.classList.toggle("is-muted", !on);
+  ui.bgmToggle.setAttribute("aria-pressed", String(on));
+  ui.bgmToggle.setAttribute("aria-label", on ? "배경음악 끄기" : "배경음악 켜기");
+  const iconUse = ui.bgmToggle.querySelector("use");
+  if (iconUse) iconUse.setAttribute("href", on ? "#icon-volume" : "#icon-volume-off");
+}
+
+async function playBgm() {
+  if (!ui.bgmAudio || !state.bgmEnabled) return false;
+  try {
+    ui.bgmAudio.volume = BGM_VOLUME;
+    await ui.bgmAudio.play();
+    return true;
+  } catch {
+    /* 브라우저 자동재생 정책: 첫 클릭 후 재시도 */
+    return false;
+  }
+}
+
+function pauseBgm() {
+  if (!ui.bgmAudio) return;
+  ui.bgmAudio.pause();
+}
+
+function tryUnlockBgm() {
+  if (!state.bgmEnabled || bgmUnlockAttempted) return;
+  playBgm().then((ok) => {
+    if (ok) bgmUnlockAttempted = true;
+  });
+}
+
+function setBgmEnabled(enabled) {
+  state.bgmEnabled = enabled;
+  saveState();
+  updateBgmToggleUI();
+  if (enabled) {
+    bgmUnlockAttempted = false;
+    playBgm();
+  } else {
+    pauseBgm();
+  }
+}
+
+function bindBgm() {
+  if (!ui.bgmAudio) return;
+  ui.bgmAudio.loop = true;
+
+  updateBgmToggleUI();
+  if (state.bgmEnabled) {
+    playBgm();
+  }
+
+  ui.bgmToggle?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setBgmEnabled(!state.bgmEnabled);
+  });
+
+  const unlockEvents = ["click", "touchstart", "keydown"];
+  const onFirstInteraction = () => tryUnlockBgm();
+  unlockEvents.forEach((name) => {
+    document.addEventListener(name, onFirstInteraction, { passive: true });
+  });
+}
+
 restoreRunningTimer();
 bindTabs();
 bindSessionEditActions();
 bindStoryActions();
+bindBgm();
 renderAll();
