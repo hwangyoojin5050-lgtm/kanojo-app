@@ -323,6 +323,81 @@ button {
   display: none;
 }
 
+.player-name-edit {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ea9ec8;
+}
+
+.player-name-edit label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  color: #7a3b63;
+  font-weight: 700;
+}
+
+.player-name-edit-row {
+  display: flex;
+  gap: 6px;
+}
+
+.player-name-edit-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #ea9ec8;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  color: #4a203f;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.player-name-edit-row button {
+  flex-shrink: 0;
+  border: 1px solid #f29ac5;
+  background: rgba(255, 240, 248, 0.95);
+  color: #7f1e5e;
+  font-size: 0.78rem;
+  padding: 8px 12px;
+}
+
+.player-name-setup {
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #ea9ec8;
+}
+
+.player-name-setup.hidden {
+  display: none;
+}
+
+.player-name-setup-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: #5a1f49;
+}
+
+.player-name-setup-desc {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: #7a3b63;
+  line-height: 1.4;
+}
+
+.player-name-setup input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ea9ec8;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #4a203f;
+}
+
 .sim-main-image {
   position: absolute;
   left: 50%;

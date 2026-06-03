@@ -1,6 +1,8 @@
 const STORAGE_KEY = "your_next_seat_v2";
 const MAX_AFFECTION = 1000;
 const HAPPY_ENDING_MIN_AFFECTION = 500;
+const MAX_PLAYER_NAME_LEN = 12;
+const DEFAULT_PLAYER_NAME = "나";
 
 const state = loadState();
 
@@ -33,6 +35,11 @@ const ui = {
   storyNextSceneBtn: document.getElementById("storyNextSceneBtn"),
   storyLogBtn: document.getElementById("storyLogBtn"),
   simChoiceBox: document.querySelector(".sim-choice-box"),
+  playerNameInput: document.getElementById("playerNameInput"),
+  savePlayerNameBtn: document.getElementById("savePlayerNameBtn"),
+  playerNameSetup: document.getElementById("playerNameSetup"),
+  prologueNameInput: document.getElementById("prologueNameInput"),
+  confirmPrologueNameBtn: document.getElementById("confirmPrologueNameBtn"),
   cancelSessionEditBtn: document.getElementById("cancelSessionEditBtn"),
   weeklyTotalText: document.getElementById("weeklyTotalText"),
   aggregationStartText: document.getElementById("aggregationStartText"),
@@ -73,7 +80,8 @@ function loadState() {
     unlockedEvents: [],
     timerStartTimestamp: null,
     timerElapsedMs: 0,
-    playerName: "나",
+    playerName: DEFAULT_PLAYER_NAME,
+    nameConfirmed: false,
     story: defaultStoryState(),
   };
   try {
@@ -85,6 +93,15 @@ function loadState() {
       id: session.id || crypto.randomUUID(),
     }));
     parsed.story = { ...defaultStoryState(), ...(parsed.story || {}) };
+    parsed.playerName = normalizePlayerName(parsed.playerName) || DEFAULT_PLAYER_NAME;
+    if (parsed.nameConfirmed === undefined) {
+      const story = parsed.story;
+      parsed.nameConfirmed =
+        story.completedScenes.includes("prologue") ||
+        story.currentSceneId !== "prologue" ||
+        story.lineIndex > 0 ||
+        Object.keys(story.choices).length > 0;
+    }
     return parsed;
   } catch {
     return fallback;
@@ -97,8 +114,56 @@ function getTotalStudyMinutes() {
   );
 }
 
+function normalizePlayerName(name) {
+  if (typeof name !== "string") return "";
+  return name.trim().slice(0, MAX_PLAYER_NAME_LEN);
+}
+
+function getPlayerName() {
+  return normalizePlayerName(state.playerName) || DEFAULT_PLAYER_NAME;
+}
+
 function formatStoryText(text) {
-  return text.replaceAll("○○", state.playerName || "나");
+  return text.replaceAll("○○", getPlayerName());
+}
+
+function needsPrologueNameSetup() {
+  return (
+    state.story.currentSceneId === "prologue" &&
+    !state.nameConfirmed &&
+    !state.story.completedScenes.includes("prologue")
+  );
+}
+
+function setPlayerName(name, { confirm = false } = {}) {
+  const next = normalizePlayerName(name);
+  if (!next) return false;
+  state.playerName = next;
+  if (confirm) state.nameConfirmed = true;
+  saveState();
+  syncPlayerNameInputs();
+  renderStory();
+  return true;
+}
+
+function syncPlayerNameInputs() {
+  const name = getPlayerName();
+  if (ui.playerNameInput) ui.playerNameInput.value = name;
+  if (ui.prologueNameInput && needsPrologueNameSetup()) {
+    ui.prologueNameInput.value =
+      state.playerName !== DEFAULT_PLAYER_NAME ? state.playerName : "";
+  }
+}
+
+function renderPlayerNameUI() {
+  const setupActive = needsPrologueNameSetup();
+  ui.playerNameSetup?.classList.toggle("hidden", !setupActive);
+  syncPlayerNameInputs();
+}
+
+function showPrologueNameRequired(message) {
+  ui.dialogueText.textContent = message;
+  ui.storyNextBtn.classList.add("hidden");
 }
 
 function getScene(sceneId) {
@@ -189,6 +254,16 @@ function renderStory() {
   const scene = getCurrentScene();
   if (!scene) return;
 
+  renderPlayerNameUI();
+
+  if (needsPrologueNameSetup()) {
+    ui.sceneTitle.textContent = scene.title;
+    ui.choiceList.innerHTML = "";
+    ui.simChoiceBox?.classList.toggle("hidden", true);
+    showPrologueNameRequired("이름을 입력한 뒤 「이 이름으로 시작하기」를 눌러 주세요.");
+    return;
+  }
+
   ui.sceneTitle.textContent = scene.title;
   ui.choiceList.innerHTML = "";
   ui.simChoiceBox?.classList.toggle("hidden", true);
@@ -247,7 +322,7 @@ function getActiveLines(scene) {
 
 function formatLine(line) {
   const speakerMap = {
-    player: "나",
+    player: getPlayerName(),
     anna: "안나",
     system: "시스템",
     narration: "",
@@ -259,6 +334,7 @@ function formatLine(line) {
 function advanceStoryLine() {
   const scene = getCurrentScene();
   if (!scene) return;
+  if (needsPrologueNameSetup()) return;
   if (state.story.phase === "choice") return;
 
   state.story.lineIndex += 1;
@@ -806,6 +882,22 @@ function bindStoryActions() {
   ui.storyLogBtn.addEventListener("click", () => {
     activateTab("planner-sim");
     renderUnlockList();
+  });
+  ui.confirmPrologueNameBtn?.addEventListener("click", () => {
+    if (!setPlayerName(ui.prologueNameInput.value, { confirm: true })) {
+      showPrologueNameRequired("이름을 한 글자 이상 입력해 주세요.");
+    }
+  });
+  ui.prologueNameInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") ui.confirmPrologueNameBtn?.click();
+  });
+  ui.savePlayerNameBtn?.addEventListener("click", () => {
+    if (!setPlayerName(ui.playerNameInput.value, { confirm: true })) {
+      ui.dialogueText.textContent = "이름을 한 글자 이상 입력해 주세요.";
+    }
+  });
+  ui.playerNameInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") ui.savePlayerNameBtn?.click();
   });
 }
 
