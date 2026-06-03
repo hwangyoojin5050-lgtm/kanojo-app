@@ -362,6 +362,36 @@ button {
   object-fit: contain;
   z-index: 2;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.45));
+  transition: opacity 0.35s ease;
+}
+
+.sim-main-image--scene {
+  width: calc(100% - 24px);
+  height: min(58vh, 480px);
+  max-height: 480px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 2px solid rgba(242, 154, 197, 0.65);
+  filter: none;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.sim-main-image--grayscale {
+  filter: grayscale(1);
+}
+
+.sim-main-image--dark {
+  filter: brightness(0.72) contrast(1.08) saturate(0.85);
+}
+
+.sim-scene--story-bg {
+  background:
+    linear-gradient(rgba(20, 12, 24, 0.2), rgba(20, 12, 24, 0.45)),
+    #2a1f30;
+}
+
+.sim-profile-image--scene {
+  object-fit: cover;
 }
 
 .sim-dialogue-box {
@@ -607,6 +637,11 @@ button {
     top: 48%;
   }
 
+  .sim-main-image--scene {
+    height: min(50vh, 400px);
+    width: calc(100% - 16px);
+  }
+
   .sim-choice-box {
     position: static;
     width: 100%;
@@ -759,6 +794,12 @@ button {
   .sim-main-image {
     top: 45%;
     height: 330px;
+  }
+
+  .sim-main-image--scene {
+    top: 48%;
+    height: min(42vh, 280px);
+    width: calc(100% - 8px);
   }
 
   .sim-dialogue-box {

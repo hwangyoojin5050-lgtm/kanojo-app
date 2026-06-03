@@ -250,3 +250,49 @@ const STORY_ORDER = [
   "ending_happy",
   "ending_yandere",
 ];
+
+/** 사건별 연애 탭 메인·프로필 이미지 */
+const STORY_VISUALS = {
+  prologue: {
+    src: "./assets/character.png",
+    variant: "character",
+    alt: "안나",
+  },
+  event1: {
+    src: "./assets/scene-event1.png",
+    variant: "scene",
+    alt: "고등학교 교실 회상",
+    grayscale: true,
+  },
+  event2: {
+    src: "./assets/scene-event2.png",
+    variant: "scene",
+    alt: "도서관에서 공부하는 장면",
+  },
+  event3: {
+    src: "./assets/scene-event3.png",
+    variant: "scene",
+    alt: "밴드 공연 무대",
+  },
+  event4: {
+    src: "./assets/scene-event4.png",
+    variant: "scene",
+    alt: "푸른 바다 해변",
+  },
+  event5: {
+    src: "./assets/scene-event5.png",
+    variant: "scene",
+    alt: "오해의 순간, 폭풍우 하늘",
+  },
+  ending_happy: {
+    src: "./assets/scene-ending-happy.png",
+    variant: "scene",
+    alt: "오해가 풀린 뒤, 벚꽃과 약속",
+  },
+  ending_yandere: {
+    src: "./assets/scene-ending-yandere.png",
+    variant: "scene",
+    alt: "어두운 방, 얀데레 엔딩",
+    dark: true,
+  },
+};

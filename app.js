@@ -38,6 +38,9 @@ const ui = {
   playerNameSetup: document.getElementById("playerNameSetup"),
   prologueNameInput: document.getElementById("prologueNameInput"),
   confirmPrologueNameBtn: document.getElementById("confirmPrologueNameBtn"),
+  simMainImage: document.getElementById("simMainImage"),
+  simProfileImage: document.getElementById("simProfileImage"),
+  simScene: document.querySelector(".sim-scene"),
   cancelSessionEditBtn: document.getElementById("cancelSessionEditBtn"),
   weeklyTotalText: document.getElementById("weeklyTotalText"),
   aggregationStartText: document.getElementById("aggregationStartText"),
@@ -157,6 +160,46 @@ function renderPlayerNameUI() {
   syncPlayerNameInputs();
 }
 
+function getStoryVisualSceneId() {
+  if (state.story.ending === "happy") return "ending_happy";
+  if (state.story.ending === "yandere") return "ending_yandere";
+
+  const current = state.story.currentSceneId || "prologue";
+  const stillPlaying =
+    !state.story.completedScenes.includes(current) || state.story.phase !== "done";
+  if (stillPlaying) return current;
+
+  let latestUnlocked = "prologue";
+  for (const sceneId of STORY_ORDER) {
+    if (sceneId.startsWith("ending_")) continue;
+    if (isSceneUnlocked(sceneId)) latestUnlocked = sceneId;
+  }
+  return latestUnlocked;
+}
+
+function renderSceneVisual() {
+  const sceneId = getStoryVisualSceneId();
+  const visual = STORY_VISUALS[sceneId] || STORY_VISUALS.prologue;
+  const isScene = visual.variant === "scene";
+
+  if (ui.simMainImage) {
+    ui.simMainImage.src = visual.src;
+    ui.simMainImage.alt = visual.alt;
+    ui.simMainImage.classList.toggle("sim-main-image--character", !isScene);
+    ui.simMainImage.classList.toggle("sim-main-image--scene", isScene);
+    ui.simMainImage.classList.toggle("sim-main-image--grayscale", !!visual.grayscale);
+    ui.simMainImage.classList.toggle("sim-main-image--dark", !!visual.dark);
+  }
+
+  if (ui.simProfileImage) {
+    ui.simProfileImage.src = visual.src;
+    ui.simProfileImage.alt = visual.alt;
+    ui.simProfileImage.classList.toggle("sim-profile-image--scene", isScene);
+  }
+
+  ui.simScene?.classList.toggle("sim-scene--story-bg", isScene);
+}
+
 function showPrologueNameRequired(message) {
   ui.dialogueText.textContent = message;
   ui.storyNextBtn.classList.add("hidden");
@@ -250,6 +293,7 @@ function renderStory() {
   const scene = getCurrentScene();
   if (!scene) return;
 
+  renderSceneVisual();
   renderPlayerNameUI();
 
   if (needsPrologueNameSetup()) {
@@ -755,6 +799,7 @@ function renderStats() {
   ui.stageText.textContent = `관계 단계: ${stage.stage}`;
   ui.affectionText.textContent = `호감도: ${state.affection} / ${MAX_AFFECTION}`;
   ui.affectionBar.style.width = `${Math.min(100, (state.affection / MAX_AFFECTION) * 100)}%`;
+  renderSceneVisual();
 }
 
 function renderTimer() {
@@ -865,6 +910,7 @@ function restoreRunningTimer() {
 function renderAll() {
   renderTimer();
   renderStats();
+  renderSceneVisual();
   renderStory();
   renderUnlockList();
   renderSessions();
