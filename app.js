@@ -34,6 +34,7 @@ const ui = {
   storyNextBtn: document.getElementById("storyNextBtn"),
   storyNextSceneBtn: document.getElementById("storyNextSceneBtn"),
   storyLogBtn: document.getElementById("storyLogBtn"),
+  resetStoryBtn: document.getElementById("resetStoryBtn"),
   simChoiceBox: document.querySelector(".sim-choice-box"),
   playerNameSetup: document.getElementById("playerNameSetup"),
   prologueNameInput: document.getElementById("prologueNameInput"),
@@ -456,6 +457,19 @@ function tryStartNextScene() {
   const next = getPlayableSceneId();
   if (!next || state.story.ending) return;
   startScene(next);
+}
+
+function resetStoryProgress() {
+  const ok = window.confirm(
+    "스토리를 프롤로그부터 다시 시작할까요?\n\n공부 기록·호감도(공부로 쌓은 부분)는 그대로 유지됩니다. 선택지 기록과 엔딩 진행만 초기화됩니다."
+  );
+  if (!ok) return;
+
+  state.story = defaultStoryState();
+  state.nameConfirmed = false;
+  recalculateAffectionAndUnlocks();
+  saveState();
+  renderAll();
 }
 
 function saveState() {
@@ -933,6 +947,7 @@ function bindStoryActions() {
   ui.prologueNameInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") ui.confirmPrologueNameBtn?.click();
   });
+  ui.resetStoryBtn?.addEventListener("click", resetStoryProgress);
 }
 
 function activateTab(tabName) {

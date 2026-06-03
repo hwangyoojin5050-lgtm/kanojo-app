@@ -251,7 +251,9 @@ button {
 
 .sim-top-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  justify-content: flex-end;
 }
 
 .sim-top-actions button {
@@ -260,6 +262,11 @@ button {
   color: #7f1e5e;
   font-size: 0.75rem;
   padding: 6px 8px;
+}
+
+.reset-story-btn {
+  border-color: #d88aaa;
+  color: #8b2d5c;
 }
 
 .sim-choice-box {
