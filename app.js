@@ -61,6 +61,9 @@ const ui = {
   },
   bgmAudio: document.getElementById("bgmAudio"),
   bgmToggle: document.getElementById("bgmToggle"),
+  sfxAudio: document.getElementById("sfxAudio"),
+  sfxVolume: document.getElementById("sfxVolume"),
+  sfxVolumeText: document.getElementById("sfxVolumeText"),
 };
 
 let timerHandle = null;
@@ -91,6 +94,7 @@ function loadState() {
     playerName: DEFAULT_PLAYER_NAME,
     nameConfirmed: false,
     bgmEnabled: true,
+    sfxVolume: 0.7,
     story: defaultStoryState(),
   };
   try {
@@ -103,6 +107,8 @@ function loadState() {
     }));
     parsed.story = { ...defaultStoryState(), ...(parsed.story || {}) };
     parsed.playerName = normalizePlayerName(parsed.playerName) || DEFAULT_PLAYER_NAME;
+    const vol = Number(parsed.sfxVolume);
+    parsed.sfxVolume = Number.isFinite(vol) ? Math.min(1, Math.max(0, vol)) : 0.7;
     if (parsed.nameConfirmed === undefined) {
       const story = parsed.story;
       parsed.nameConfirmed =
@@ -1042,30 +1048,73 @@ function setBgmEnabled(enabled) {
   }
 }
 
-function bindBgm() {
-  if (!ui.bgmAudio) return;
-  ui.bgmAudio.loop = true;
+function updateSfxVolumeUI() {
+  if (!ui.sfxVolume) return;
+  const percent = Math.round(state.sfxVolume * 100);
+  ui.sfxVolume.value = String(percent);
+  if (ui.sfxVolumeText) ui.sfxVolumeText.textContent = `${percent}%`;
+}
+
+function playClickSfx() {
+  if (!ui.sfxAudio || state.sfxVolume <= 0) return;
+  ui.sfxAudio.volume = state.sfxVolume;
+  ui.sfxAudio.currentTime = 0;
+  ui.sfxAudio.play().catch(() => {});
+}
+
+function shouldPlayClickSfx(target) {
+  const btn = target.closest?.("button");
+  if (!btn) return false;
+  if (btn.id === "bgmToggle") return false;
+  if (target.closest?.(".sfx-volume-control")) return false;
+
+  return (
+    btn.classList.contains("tab-btn") ||
+    btn.classList.contains("btn-pill") ||
+    btn.classList.contains("choice-btn") ||
+    btn.classList.contains("session-edit-btn") ||
+    btn.classList.contains("story-next-btn") ||
+    Boolean(btn.querySelector(".ui-icon, .icon-chip"))
+  );
+}
+
+function setSfxVolumeFromPercent(percent) {
+  state.sfxVolume = Math.min(1, Math.max(0, percent / 100));
+  saveState();
+  updateSfxVolumeUI();
+}
+
+function bindAudio() {
+  if (ui.bgmAudio) ui.bgmAudio.loop = true;
 
   updateBgmToggleUI();
-  if (state.bgmEnabled) {
-    playBgm();
-  }
+  updateSfxVolumeUI();
+  if (state.bgmEnabled) playBgm();
 
   ui.bgmToggle?.addEventListener("click", (event) => {
     event.stopPropagation();
     setBgmEnabled(!state.bgmEnabled);
   });
 
-  const unlockEvents = ["click", "touchstart", "keydown"];
-  const onFirstInteraction = () => tryUnlockBgm();
-  unlockEvents.forEach((name) => {
-    document.addEventListener(name, onFirstInteraction, { passive: true });
+  ui.sfxVolume?.addEventListener("input", () => {
+    setSfxVolumeFromPercent(Number(ui.sfxVolume.value));
   });
+
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (shouldPlayClickSfx(event.target)) playClickSfx();
+      tryUnlockBgm();
+    },
+    true
+  );
+
+  document.addEventListener("keydown", () => tryUnlockBgm(), { passive: true });
 }
 
 restoreRunningTimer();
 bindTabs();
 bindSessionEditActions();
 bindStoryActions();
-bindBgm();
+bindAudio();
 renderAll();

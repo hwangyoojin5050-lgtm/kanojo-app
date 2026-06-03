@@ -145,6 +145,50 @@ body {
   color: var(--sub);
 }
 
+.app-header-audio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sfx-volume-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 120px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1.5px solid var(--border-soft);
+  box-shadow: var(--shadow-chip);
+}
+
+.sfx-volume-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #7a3b63;
+}
+
+.sfx-volume-control input[type="range"] {
+  width: 100%;
+  min-height: 0;
+  height: 6px;
+  padding: 0;
+  margin: 0;
+  accent-color: #e8a6b3;
+  border: none;
+  background: transparent;
+}
+
+.sfx-volume-value {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--sub);
+}
+
 .app-title {
   margin: 0;
   font-size: 1.9rem;
