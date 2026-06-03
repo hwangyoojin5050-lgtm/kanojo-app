@@ -628,7 +628,8 @@ function renderSessions() {
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "session-edit-btn";
-    editBtn.textContent = "수정";
+    editBtn.innerHTML =
+      '<svg class="ui-icon" aria-hidden="true"><use href="#icon-pencil"></use></svg><span>수정</span>';
     editBtn.dataset.sessionId = s.id;
     li.appendChild(editBtn);
 
@@ -780,24 +781,26 @@ function renderWeeklyChart() {
       scales: {
         x: {
           ticks: {
-            color: "#e1e1e1",
+            color: "#2f2737",
+            font: { family: "Nunito, Noto Sans KR, sans-serif", size: 11, weight: "600" },
             maxRotation: 55,
             minRotation: 55,
           },
-          grid: { color: "#676768" },
+          grid: { color: "rgba(91, 80, 104, 0.18)" },
         },
         y: {
           beginAtZero: true,
           min: 0,
           max: 8,
           ticks: {
-            color: "#e1e1e1",
+            color: "#2f2737",
+            font: { family: "Nunito, Noto Sans KR, sans-serif", size: 11, weight: "600" },
             stepSize: 2,
             callback(value) {
               return `${value}시간`;
             },
           },
-          grid: { color: "#7b7b7c" },
+          grid: { color: "rgba(91, 80, 104, 0.22)" },
         },
       },
     },
