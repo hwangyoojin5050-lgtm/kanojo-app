@@ -64,6 +64,8 @@ const ui = {
   sfxAudio: document.getElementById("sfxAudio"),
   sfxVolume: document.getElementById("sfxVolume"),
   sfxVolumeText: document.getElementById("sfxVolumeText"),
+  challengeBadgeGrid: document.getElementById("challengeBadgeGrid"),
+  badgeProgressText: document.getElementById("badgeProgressText"),
 };
 
 let timerHandle = null;
@@ -554,6 +556,66 @@ function getHeatmapLevelRangeLabel(level) {
   return labels[level] ?? "";
 }
 
+function sessionStudyHour(session) {
+  const date = session.createdAt ? new Date(session.createdAt) : new Date(`${session.dateKey}T12:00:00`);
+  return date.getHours();
+}
+
+function getBadgeContext() {
+  let hasLateNightStudy = false;
+  let hasEarlyMorningStudy = false;
+  for (const session of state.sessions) {
+    const hour = sessionStudyHour(session);
+    if (hour >= 22) hasLateNightStudy = true;
+    if (hour < 7) hasEarlyMorningStudy = true;
+  }
+  return {
+    totalMinutes: getTotalStudyMinutes(),
+    sessionCount: state.sessions.length,
+    streak: calculateStreak(),
+    affection: state.affection,
+    todayMinutes: getTodayStudyMinutes(),
+    dailyGoal: state.dailyGoalMin,
+    storyCompleted: state.story.completedScenes || [],
+    ending: state.story.ending,
+    hasLateNightStudy,
+    hasEarlyMorningStudy,
+  };
+}
+
+function renderChallengeBadges() {
+  if (!ui.challengeBadgeGrid) return;
+  const ctx = getBadgeContext();
+  let unlocked = 0;
+
+  ui.challengeBadgeGrid.innerHTML = "";
+  for (const badge of CHALLENGE_BADGES) {
+    const earned = badge.check(ctx);
+    if (earned) unlocked += 1;
+
+    const card = document.createElement("article");
+    card.className = `challenge-badge ${earned ? "is-unlocked" : "is-locked"}`;
+    card.title = `${badge.title}: ${badge.desc}`;
+
+    card.innerHTML = `
+      <span class="badge-status-pill">${earned ? "획득" : "미획득"}</span>
+      <div class="badge-medallion">
+        <div class="badge-medallion-inner">
+          <svg class="ui-icon badge-icon" aria-hidden="true"><use href="#${badge.icon}"></use></svg>
+        </div>
+      </div>
+      <strong class="badge-title">${badge.title}</strong>
+      <span class="badge-desc">${badge.desc}</span>
+    `;
+
+    ui.challengeBadgeGrid.appendChild(card);
+  }
+
+  if (ui.badgeProgressText) {
+    ui.badgeProgressText.textContent = `배지 ${unlocked} / ${CHALLENGE_BADGES.length}개 획득`;
+  }
+}
+
 function calculateStreak() {
   const dayMap = new Map();
   for (const session of state.sessions) {
@@ -835,6 +897,7 @@ function renderStats() {
   ui.affectionText.textContent = `호감도: ${state.affection} / ${MAX_AFFECTION}`;
   ui.affectionBar.style.width = `${Math.min(100, (state.affection / MAX_AFFECTION) * 100)}%`;
   renderSceneVisual();
+  renderChallengeBadges();
 }
 
 function renderTimer() {
@@ -951,6 +1014,7 @@ function renderAll() {
   renderSessions();
   renderWeeklyChart();
   renderHeatmap();
+  renderChallengeBadges();
 }
 
 function bindStoryActions() {
