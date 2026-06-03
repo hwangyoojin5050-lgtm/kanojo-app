@@ -10,6 +10,14 @@ https://hwangyoojin5050-lgtm.github.io/kanojo-app/
 
 (저장소에 push 후 Actions 배포가 끝나면 접속 가능)
 
+#### 빨간 X(배포 실패)가 뜰 때 — 한 번만 설정
+
+1. 저장소 **Settings** → 왼쪽 **Pages**
+2. **Build and deployment** → Source: **GitHub Actions** 선택
+3. **Actions** 탭 → 실패한 워크플로 → **Re-run all jobs**
+
+배포 성공 후 위 URL로 접속합니다.
+
 ### 로컬
 
 1. `index.html` 파일을 브라우저로 열기
