@@ -152,20 +152,37 @@
 
             <section class="card chart-card">
               <h2>공부 시간 히트맵</h2>
-              <p class="heatmap-help">예시처럼 시간표 형태로, 요일별/시간대별 공부 패턴을 보여줍니다.</p>
+              <p class="heatmap-help">
+                최근 7일 × 시간대별 공부 분. 한 칸 = 그날 그 시간에 공부한 시간(분)이며, 색이
+                진할수록 분이 많습니다.
+              </p>
               <div class="heatmap-layout">
-                <div id="heatmapHourLabels" class="hour-labels"></div>
-                <div class="heatmap-main">
-                  <div id="heatmapDayLabels" class="day-labels"></div>
-                  <div id="studyHeatmap" class="heatmap-grid"></div>
+                <div class="heatmap-chart">
+                  <div class="heatmap-body">
+                    <div class="heatmap-grid-column">
+                      <div id="studyHeatmap" class="heatmap-grid"></div>
+                      <div id="heatmapHourLabels" class="hour-labels-x"></div>
+                    </div>
+                    <div id="heatmapDayLabels" class="day-labels-y"></div>
+                  </div>
                 </div>
               </div>
               <div class="heatmap-legend">
-                <span>과목</span>
-                <div class="legend-item"><span class="legend-cell subject-english"></span>영어</div>
-                <div class="legend-item"><span class="legend-cell subject-korean"></span>국어/코딩</div>
-                <div class="legend-item"><span class="legend-cell subject-science"></span>수학</div>
-                <div class="legend-item"><span class="legend-cell subject-etc"></span>기타</div>
+                <div class="legend-item">
+                  <span class="legend-cell heat-0"></span><span>0분</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-cell heat-1"></span><span>1~9분</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-cell heat-2"></span><span>10~19분</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-cell heat-3"></span><span>20~39분</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-cell heat-4"></span><span>40분 이상</span>
+                </div>
               </div>
             </section>
 

@@ -1,6 +1,8 @@
 const STORAGE_KEY = "your_next_seat_v2";
 const MAX_AFFECTION = 1000;
 const HAPPY_ENDING_MIN_AFFECTION = 500;
+/** 시간 칸(1시간)별 공부 분 → 고정 색 단계. 진할수록 분이 많음. */
+const HEATMAP_LEVEL_MINUTES = [0, 1, 10, 20, 40];
 const MAX_PLAYER_NAME_LEN = 12;
 const DEFAULT_PLAYER_NAME = "나";
 
@@ -521,11 +523,24 @@ function getDateFromKey(dateKey) {
   return new Date(`${dateKey}T00:00:00`);
 }
 
-function getSubjectClass(subject) {
-  if (subject === "영어") return "subject-english";
-  if (subject === "코딩" || subject === "국어") return "subject-korean";
-  if (subject === "수학") return "subject-science";
-  return "subject-etc";
+function formatHeatmapDayLabel(dateKey) {
+  const d = getDateFromKey(dateKey);
+  const weekday = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
+  return `${d.getMonth() + 1}/${d.getDate()} (${weekday})`;
+}
+
+function getHeatmapIntensityLevel(minutes) {
+  const m = Math.max(0, Math.floor(minutes));
+  if (m <= 0) return 0;
+  if (m < HEATMAP_LEVEL_MINUTES[2]) return 1;
+  if (m < HEATMAP_LEVEL_MINUTES[3]) return 2;
+  if (m < HEATMAP_LEVEL_MINUTES[4]) return 3;
+  return 4;
+}
+
+function getHeatmapLevelRangeLabel(level) {
+  const labels = ["0분", "1~9분", "10~19분", "20~39분", "40분 이상"];
+  return labels[level] ?? "";
 }
 
 function calculateStreak() {
@@ -632,33 +647,35 @@ function renderHeatmap() {
 
   if (!labels.length) return;
 
-  for (const hour of hourOrder) {
-    const label = document.createElement("span");
-    label.textContent = `${hour}`;
-    ui.heatmapHourLabels.appendChild(label);
-  }
-
   for (const day of labels) {
-    const d = getDateFromKey(day);
-    const weekday = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
     const dayLabel = document.createElement("span");
-    dayLabel.textContent = `${weekday}`;
+    dayLabel.textContent = formatHeatmapDayLabel(day);
     ui.heatmapDayLabels.appendChild(dayLabel);
   }
 
+  for (const hour of hourOrder) {
+    const label = document.createElement("span");
+    label.textContent = hour % 3 === 0 ? `${hour}시` : "";
+    ui.heatmapHourLabels.appendChild(label);
+  }
+
+  const allowedDays = new Set(labels);
+
   for (const session of state.sessions) {
     if (!session.durationMs || session.durationMs <= 0) continue;
-    let cursor = session.createdAt ? new Date(session.createdAt) : new Date(`${session.dateKey}T23:59:00`);
-    let remainingMinutes = Math.max(1, Math.floor(session.durationMs / 60000));
+    const totalMinutes = Math.max(1, Math.floor(session.durationMs / 60000));
+    let end = session.createdAt ? new Date(session.createdAt) : null;
+    if (!end || Number.isNaN(end.getTime())) {
+      end = new Date(`${session.dateKey}T12:00:00`);
+    }
+    let cursor = new Date(end);
+    let remainingMinutes = totalMinutes;
     while (remainingMinutes > 0) {
       const dayKey = getTodayKey(cursor);
-      if (dayMap.has(dayKey)) {
+      if (allowedDays.has(dayKey)) {
         const hour = cursor.getHours();
-        const subject = session.subject || "기타";
-        const hourBucket = dayMap.get(dayKey).get(hour) || { total: 0, bySubject: new Map() };
-        hourBucket.total += 1;
-        hourBucket.bySubject.set(subject, (hourBucket.bySubject.get(subject) || 0) + 1);
-        dayMap.get(dayKey).set(hour, hourBucket);
+        const prev = dayMap.get(dayKey).get(hour) || 0;
+        dayMap.get(dayKey).set(hour, prev + 1);
       }
       cursor = new Date(cursor.getTime() - 60 * 1000);
       remainingMinutes -= 1;
@@ -667,26 +684,16 @@ function renderHeatmap() {
 
   for (const day of labels) {
     for (const hour of hourOrder) {
-      const bucket = dayMap.get(day).get(hour);
-      const total = bucket?.total || 0;
-      let maxSubject = "기타";
-      if (bucket && bucket.bySubject.size > 0) {
-        let max = 0;
-        bucket.bySubject.forEach((value, subject) => {
-          if (value > max) {
-            max = value;
-            maxSubject = subject;
-          }
-        });
+      const total = dayMap.get(day).get(hour) || 0;
+      const level = getHeatmapIntensityLevel(total);
+      const cell = document.createElement("div");
+      cell.className = `heatmap-cell heat-${level}`;
+      if (total >= 10) {
+        cell.textContent = String(total);
+        cell.classList.add("heatmap-cell--labeled");
       }
-      const subjectClass = getSubjectClass(maxSubject);
-      const opacity = total > 0 ? Math.min(1, 0.35 + total / 60) : 1;
-      const d = getDateFromKey(day);
-      const weekday = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-    const cell = document.createElement("div");
-      cell.className = `heatmap-cell ${total > 0 ? `active ${subjectClass}` : ""}`.trim();
-      cell.style.opacity = String(opacity);
-      cell.title = `${day}(${weekday}) ${String(hour).padStart(2, "0")}시: ${total}분`;
+      const rangeLabel = getHeatmapLevelRangeLabel(level);
+      cell.title = `${formatHeatmapDayLabel(day)} ${String(hour).padStart(2, "0")}시 · ${total}분 (${rangeLabel})`;
       ui.studyHeatmap.appendChild(cell);
     }
   }
