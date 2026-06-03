@@ -7,6 +7,29 @@ const MAX_PLAYER_NAME_LEN = 12;
 const DEFAULT_PLAYER_NAME = "나";
 const BGM_VOLUME = 0.4;
 
+const TUTORIAL_STEPS = [
+  {
+    title: "안나의 옆자리에 오신 것을 환영해요",
+    body: "공부 시간이 쌓일수록 호감도가 오르고, 안나와의 스토리가 하나씩 열려요. 매일 조금씩 함께 성장해 봐요.",
+    icon: "icon-heart",
+  },
+  {
+    title: "타이머로 공부 기록하기",
+    body: "타이머 탭에서 시작 → 정지/저장을 누르면 오늘 공부가 기록돼요. 일일 목표(분)도 설정할 수 있어요.",
+    icon: "icon-clock",
+  },
+  {
+    title: "연애 탭에서 스토리 진행",
+    body: "연애 탭에서 이름을 정한 뒤 프롤로그를 시작하세요. 선택지에 따라 관계와 엔딩이 달라져요.",
+    icon: "icon-book",
+  },
+  {
+    title: "통계와 도전과제 배지",
+    body: "통계 탭에서 주간 그래프·히트맵·도전과제 배지를 확인하세요. 상단 BGM·효과음 슬라이더로 소리도 조절할 수 있어요.",
+    icon: "icon-gift",
+  },
+];
+
 const state = loadState();
 let bgmUnlockAttempted = false;
 
@@ -66,7 +89,17 @@ const ui = {
   sfxVolumeText: document.getElementById("sfxVolumeText"),
   challengeBadgeGrid: document.getElementById("challengeBadgeGrid"),
   badgeProgressText: document.getElementById("badgeProgressText"),
+  tutorialOverlay: document.getElementById("tutorialOverlay"),
+  tutorialTitle: document.getElementById("tutorialTitle"),
+  tutorialBody: document.getElementById("tutorialBody"),
+  tutorialStepLabel: document.getElementById("tutorialStepLabel"),
+  tutorialStepDots: document.getElementById("tutorialStepDots"),
+  tutorialIconUse: document.getElementById("tutorialIconUse"),
+  tutorialSkip: document.getElementById("tutorialSkip"),
+  tutorialNext: document.getElementById("tutorialNext"),
 };
+
+let tutorialStepIndex = 0;
 
 let timerHandle = null;
 let startTimestamp = state.timerStartTimestamp;
@@ -97,6 +130,7 @@ function loadState() {
     nameConfirmed: false,
     bgmEnabled: true,
     sfxVolume: 0.7,
+    tutorialSeen: false,
     story: defaultStoryState(),
   };
   try {
@@ -118,6 +152,11 @@ function loadState() {
         story.currentSceneId !== "prologue" ||
         story.lineIndex > 0 ||
         Object.keys(story.choices).length > 0;
+    }
+    if (parsed.tutorialSeen === undefined) {
+      parsed.tutorialSeen =
+        (parsed.sessions?.length || 0) > 0 ||
+        (parsed.story?.completedScenes?.length || 0) > 0;
     }
     return parsed;
   } catch {
@@ -1130,6 +1169,7 @@ function shouldPlayClickSfx(target) {
   const btn = target.closest?.("button");
   if (!btn) return false;
   if (btn.id === "bgmToggle") return false;
+  if (target.closest?.(".tutorial-overlay")) return false;
   if (target.closest?.(".sfx-volume-control")) return false;
 
   return (
@@ -1146,6 +1186,69 @@ function setSfxVolumeFromPercent(percent) {
   state.sfxVolume = Math.min(1, Math.max(0, percent / 100));
   saveState();
   updateSfxVolumeUI();
+}
+
+function renderTutorialStep(index) {
+  const step = TUTORIAL_STEPS[index];
+  if (!step || !ui.tutorialOverlay) return;
+
+  tutorialStepIndex = index;
+  ui.tutorialTitle.textContent = step.title;
+  ui.tutorialBody.textContent = step.body;
+  ui.tutorialStepLabel.textContent = `${index + 1} / ${TUTORIAL_STEPS.length}`;
+  if (ui.tutorialIconUse) ui.tutorialIconUse.setAttribute("href", `#${step.icon}`);
+
+  if (ui.tutorialStepDots) {
+    ui.tutorialStepDots.innerHTML = "";
+    TUTORIAL_STEPS.forEach((_, i) => {
+      const dot = document.createElement("span");
+      dot.className = `tutorial-dot${i === index ? " is-active" : ""}`;
+      ui.tutorialStepDots.appendChild(dot);
+    });
+  }
+
+  const isLast = index >= TUTORIAL_STEPS.length - 1;
+  if (ui.tutorialNext) {
+    ui.tutorialNext.textContent = isLast ? "시작하기" : "다음";
+  }
+}
+
+function openTutorial() {
+  if (!ui.tutorialOverlay) return;
+  renderTutorialStep(0);
+  ui.tutorialOverlay.classList.remove("hidden");
+  ui.tutorialOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("tutorial-open");
+  ui.tutorialNext?.focus();
+}
+
+function closeTutorial(markSeen = true) {
+  if (!ui.tutorialOverlay) return;
+  if (markSeen) {
+    state.tutorialSeen = true;
+    saveState();
+  }
+  ui.tutorialOverlay.classList.add("hidden");
+  ui.tutorialOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("tutorial-open");
+}
+
+function showTutorialIfNeeded() {
+  if (!state.tutorialSeen) openTutorial();
+}
+
+function bindTutorial() {
+  ui.tutorialSkip?.addEventListener("click", () => closeTutorial(true));
+  ui.tutorialNext?.addEventListener("click", () => {
+    if (tutorialStepIndex >= TUTORIAL_STEPS.length - 1) {
+      closeTutorial(true);
+      return;
+    }
+    renderTutorialStep(tutorialStepIndex + 1);
+  });
+  ui.tutorialOverlay?.addEventListener("click", (event) => {
+    if (event.target === ui.tutorialOverlay) closeTutorial(true);
+  });
 }
 
 function bindAudio() {
@@ -1181,4 +1284,6 @@ bindTabs();
 bindSessionEditActions();
 bindStoryActions();
 bindAudio();
+bindTutorial();
 renderAll();
+showTutorialIfNeeded();

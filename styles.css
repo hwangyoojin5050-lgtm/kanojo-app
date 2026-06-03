@@ -24,6 +24,92 @@
   overflow: hidden;
 }
 
+body.tutorial-open {
+  overflow: hidden;
+}
+
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(47, 39, 55, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.tutorial-overlay.hidden {
+  display: none;
+}
+
+.tutorial-modal {
+  width: min(100%, 380px);
+  padding: 22px 20px 18px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 240, 248, 0.98);
+  border: 2px solid #f29ac5;
+  box-shadow: var(--shadow-soft);
+  color: #5a1f49;
+}
+
+.tutorial-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tutorial-step-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #7a3b63;
+}
+
+.tutorial-title {
+  margin: 0 0 10px;
+  font-family: var(--display-font);
+  font-size: 1.35rem;
+  line-height: 1.3;
+  color: #4a203f;
+}
+
+.tutorial-body {
+  margin: 0 0 16px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--sub);
+}
+
+.tutorial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: #e6d2df;
+}
+
+.tutorial-dot.is-active {
+  background: linear-gradient(120deg, #e8a6b3, #b8d7ee);
+  transform: scale(1.15);
+}
+
+.tutorial-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tutorial-actions .btn-pill {
+  flex: 1;
+}
+
 .ui-icon {
   width: 1.1rem;
   height: 1.1rem;

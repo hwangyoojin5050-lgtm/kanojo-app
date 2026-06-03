@@ -176,6 +176,31 @@
       </symbol>
     </svg>
 
+    <div
+      id="tutorialOverlay"
+      class="tutorial-overlay hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tutorialTitle"
+      aria-hidden="true"
+    >
+      <div class="tutorial-modal">
+        <div class="tutorial-modal-head">
+          <span class="icon-chip icon-chip--sm tutorial-icon-chip" id="tutorialIconChip">
+            <svg class="ui-icon" aria-hidden="true"><use id="tutorialIconUse" href="#icon-heart"></use></svg>
+          </span>
+          <p id="tutorialStepLabel" class="tutorial-step-label">1 / 4</p>
+        </div>
+        <h2 id="tutorialTitle" class="tutorial-title">환영합니다</h2>
+        <p id="tutorialBody" class="tutorial-body"></p>
+        <div id="tutorialStepDots" class="tutorial-dots" aria-hidden="true"></div>
+        <div class="tutorial-actions">
+          <button type="button" id="tutorialSkip" class="btn-pill">건너뛰기</button>
+          <button type="button" id="tutorialNext" class="btn-pill primary">다음</button>
+        </div>
+      </div>
+    </div>
+
     <div class="app">
       <audio id="bgmAudio" src="./assets/cozy_room.mp3" loop preload="auto"></audio>
       <audio id="sfxAudio" src="./assets/MP_Blop.mp3" preload="auto"></audio>
