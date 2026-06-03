@@ -4,6 +4,14 @@
 
 ## 실행 방법
 
+### 온라인 (GitHub Pages)
+
+https://hwangyoojin5050-lgtm.github.io/kanojo-app/
+
+(저장소에 push 후 Actions 배포가 끝나면 접속 가능)
+
+### 로컬
+
 1. `index.html` 파일을 브라우저로 열기
 2. 타이머 시작/정지로 기록 저장
 3. 목표 달성률, 호감도, 이벤트 해금, 최근 기록, GitHub 스타일 히트맵 확인
